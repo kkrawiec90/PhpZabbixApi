@@ -50,6 +50,19 @@ namespace ZabbixApi;
 
 class Exception extends \Exception
 {
+    protected $errorCode;
+
+    public function setErrorCode($errorCode)
+    {
+        $this->errorCode = $errorCode;
+
+        return $this;
+    }
+
+    public function getErrorCode()
+    {
+        return $this->errorCode;
+    }
 }
 
 /**
@@ -357,9 +370,11 @@ abstract class ZabbixApiAbstract
         // validate response
         if(!is_object($this->responseDecoded) && !is_array($this->responseDecoded))
             throw new Exception('Could not decode JSON response.');
-        if(array_key_exists('error', $this->responseDecoded))
-            throw new Exception('API error '.$this->responseDecoded->error->code.': '.$this->responseDecoded->error->data);
-
+        if(array_key_exists('error', $this->responseDecoded)) {
+            $e = new Exception('API error ' . $this->responseDecoded->error->code . ': ' . $this->responseDecoded->error->data);
+            $e->setErrorCode($this->responseDecoded->error->code);
+            throw $e;
+        }
         // return response
         if($resultArrayKey && is_array($this->responseDecoded->result))
             return $this->convertToAssociatveArray($this->responseDecoded->result, $resultArrayKey);
